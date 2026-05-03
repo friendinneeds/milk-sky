@@ -9,6 +9,8 @@ function init(){
   const fileInput = document.getElementById('file-input');
   const browseBtn = document.getElementById('browse-btn');
 
+  const isAdmin = window.location.hash === '#admin';
+
   const STORAGE_KEY = 'milksky.files.v1';
   let FILES = []; // { name, sizeStr, kind, dateStr, icon, isImage, url }
   let selectedIdx = -1;
@@ -174,13 +176,15 @@ function init(){
         label.textContent = f.name;
         item.appendChild(label);
 
-        const delBtn = document.createElement('button');
-        delBtn.className = 'grid-del';
-        delBtn.textContent = '×';
-        delBtn.title = 'Delete';
-        delBtn.setAttribute('aria-label', 'Delete');
-        delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteAt(idx); });
-        item.appendChild(delBtn);
+        if(isAdmin){
+          const delBtn = document.createElement('button');
+          delBtn.className = 'grid-del';
+          delBtn.textContent = '×';
+          delBtn.title = 'Delete';
+          delBtn.setAttribute('aria-label', 'Delete');
+          delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteAt(idx); });
+          item.appendChild(delBtn);
+        }
 
         item.addEventListener('click', (e) => {
           if(e.target.closest('.grid-del')) return;
@@ -213,7 +217,7 @@ function init(){
           '<div>' + f.sizeStr + '</div>' +
           '<div class="kind-cell">' +
             '<span class="kind-text">' + f.kind + '</span>' +
-            '<button class="del-btn" title="Delete" aria-label="Delete">×</button>' +
+            (isAdmin ? '<button class="del-btn" title="Delete" aria-label="Delete">×</button>' : '') +
           '</div>';
 
         row.querySelector('.del-btn').addEventListener('click', (e) => {
@@ -386,19 +390,24 @@ function init(){
     if(e.key === 'Escape' && preview.classList.contains('show')) hidePreview();
   });
 
-  // Delete key removes selected row
-  document.addEventListener('keydown', (e) => {
-    if((e.key === 'Delete' || e.key === 'Backspace') && selectedIdx >= 0){
-      const target = e.target;
-      if(target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
-      e.preventDefault();
-      deleteAt(selectedIdx);
-    }
-  });
+  // Delete key removes selected row (admin only)
+  if(isAdmin){
+    document.addEventListener('keydown', (e) => {
+      if((e.key === 'Delete' || e.key === 'Backspace') && selectedIdx >= 0){
+        const target = e.target;
+        if(target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+        deleteAt(selectedIdx);
+      }
+    });
+  }
 
-  // Clear all button (in toolbar)
+  // Clear all button (admin only)
   const clearBtn = document.getElementById('clear-all');
-  if(clearBtn) clearBtn.addEventListener('click', clearAll);
+  if(clearBtn){
+    if(isAdmin){ clearBtn.addEventListener('click', clearAll); }
+    else { clearBtn.style.display = 'none'; }
+  }
 
   render();
 
