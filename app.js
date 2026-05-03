@@ -109,7 +109,7 @@ function init(){
     return '';
   }
 
-  let viewMode = 'list'; // 'list' | 'grid'
+  let viewMode = 'grid'; // 'list' | 'grid'
   const colsEl = document.querySelector('.cols');
 
   function showPreview(f, idx){
