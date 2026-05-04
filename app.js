@@ -112,6 +112,7 @@ function init(){
   }
 
   let viewMode = 'grid'; // 'list' | 'grid'
+  let visibleList = []; // kept in sync with render() for arrow-key nav
   const colsEl = document.querySelector('.cols');
 
   function showPreview(f, idx){
@@ -140,7 +141,7 @@ function init(){
     list.innerHTML = '';
 
     const q = searchQuery.trim().toLowerCase();
-    const visible = FILES
+    const visible = visibleList = FILES
       .map((f, idx) => ({ f, idx }))
       .filter(({ f }) => !q || f.name.toLowerCase().includes(q))
       .sort((a, b) => {
@@ -388,9 +389,18 @@ function init(){
     hidePreview();
   });
 
-  // Esc dismisses the preview
+  // Esc dismisses preview; arrow keys navigate through it endlessly
   document.addEventListener('keydown', (e) => {
-    if(e.key === 'Escape' && preview.classList.contains('show')) hidePreview();
+    if(!preview.classList.contains('show')) return;
+    if(e.key === 'Escape'){ hidePreview(); return; }
+    if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+      e.preventDefault();
+      const delta = e.key === 'ArrowRight' ? 1 : -1;
+      const pos = visibleList.findIndex(({idx}) => idx === selectedIdx);
+      if(pos < 0 || visibleList.length < 2) return;
+      const next = visibleList[(pos + delta + visibleList.length) % visibleList.length];
+      showPreview(next.f, next.idx);
+    }
   });
 
   // Delete key removes selected row (admin only)
