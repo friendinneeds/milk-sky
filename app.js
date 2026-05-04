@@ -188,6 +188,7 @@ function init(){
 
         item.addEventListener('click', (e) => {
           if(e.target.closest('.grid-del')) return;
+          e.stopPropagation();
           showPreview(f, idx);
         });
 
