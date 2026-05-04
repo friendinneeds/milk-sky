@@ -788,6 +788,60 @@ body::after{
   filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
 }
 
+/* Third desktop icon — Contacts */
+.desktop-icon-contacts{
+  top: 214px;
+  left: 22px;
+}
+
+/* Fourth desktop icon — Skills */
+.desktop-icon-skills{
+  top: 312px;
+  left: 22px;
+}
+
+/* Skills panel */
+.skills-win{
+  width: min(520px, 88vw);
+  background: #fff;
+  border: 1px solid var(--blue-5);
+  border-radius: 6px 6px 4px 4px;
+  box-shadow: 0 1px 0 #fff inset, 0 14px 30px rgba(20,55,100,.25);
+  overflow: hidden;
+  position: fixed;
+  z-index: 32;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+}
+.skills-win.show{ display: block; }
+.skills-body{
+  padding: 16px 20px 20px;
+}
+.skills-group{ margin-bottom: 14px; }
+.skills-group:last-child{ margin-bottom: 0; }
+.skills-group-title{
+  font-weight: bold;
+  font-size: 11px;
+  color: var(--navy);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--blue-3);
+}
+.skills-tags{ display: flex; flex-wrap: wrap; gap: 5px; }
+.skill-tag{
+  background: linear-gradient(180deg, #fff, #dceaf8);
+  border: 1px solid var(--blue-4);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--navy);
+  white-space: nowrap;
+}
+
 </style>
 </head>
 <body style="background-color: rgb(226, 232, 238);">
@@ -804,6 +858,26 @@ body::after{
     <img src="data:image/png;base64,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" alt="" draggable="false" />
   </div>
   <div class="desktop-icon-label">are.na</div>
+</a>
+
+<a class="desktop-icon desktop-icon-contacts" id="desk-contacts" href="mailto:naggetss@gmail.com" title="Contacts">
+  <div class="desktop-icon-img" aria-hidden="true">
+    <img src="assets/contacts.svg" alt="" draggable="false">
+  </div>
+  <div class="desktop-icon-label">Contacts</div>
+</a>
+
+<a class="desktop-icon desktop-icon-skills" id="desk-skills" href="#" title="Skills">
+  <div class="desktop-icon-img" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56">
+      <rect x="9" y="6" width="38" height="44" rx="3" fill="#e8f0f8" stroke="#8aabcc" stroke-width="1.2"/>
+      <polygon points="28,11 30.2,17.8 37.4,17.8 31.7,22 33.9,28.8 28,24.6 22.1,28.8 24.3,22 18.6,17.8 25.8,17.8" fill="#4a80b8"/>
+      <line x1="14" y1="35" x2="42" y2="35" stroke="#9ab8d4" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="14" y1="39" x2="38" y2="39" stroke="#b8d0e8" stroke-width="1" stroke-linecap="round"/>
+      <line x1="14" y1="43" x2="34" y2="43" stroke="#b8d0e8" stroke-width="1" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="desktop-icon-label">Skills</div>
 </a>
 
 <div class="win genie-out" role="application" aria-label="File browser" style="--gx: 0px; --gy: 0px;">
@@ -854,6 +928,45 @@ body::after{
   <div class="status">
     <div><span id="count">0</span> items, 14.3 GB available</div>
     <div class="pill">/Desktop/dear life/milk sky</div>
+  </div>
+</div>
+
+<div class="skills-win" id="skills-win" role="dialog" aria-label="Skills">
+  <div class="titlebar">
+    <div class="dots">
+      <div class="dot d-r" id="skills-close" title="Close" style="cursor:pointer"></div>
+      <div class="dot d-y"></div>
+      <div class="dot d-g"></div>
+    </div>
+    <div class="title">Skills</div>
+  </div>
+  <div class="skills-body">
+    <div class="skills-group">
+      <div class="skills-group-title">Design</div>
+      <div class="skills-tags">
+        <span class="skill-tag">UI Design</span>
+        <span class="skill-tag">Brand Identity</span>
+        <span class="skill-tag">Typography</span>
+        <span class="skill-tag">Art Direction</span>
+        <span class="skill-tag">Motion Graphics</span>
+      </div>
+    </div>
+    <div class="skills-group">
+      <div class="skills-group-title">Development</div>
+      <div class="skills-tags">
+        <span class="skill-tag">HTML / CSS</span>
+        <span class="skill-tag">JavaScript</span>
+        <span class="skill-tag">React</span>
+      </div>
+    </div>
+    <div class="skills-group">
+      <div class="skills-group-title">Tools</div>
+      <div class="skills-tags">
+        <span class="skill-tag">Figma</span>
+        <span class="skill-tag">After Effects</span>
+        <span class="skill-tag">Adobe Creative Suite</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1447,6 +1560,27 @@ function init(){
     if (modal && !modal.hidden && (e.key === 'Escape')) closeTrashModal();
   });
 }
+
+// ---------- Skills window ----------
+(function(){
+  const skillsBtn = document.getElementById('desk-skills');
+  const skillsWin = document.getElementById('skills-win');
+  const skillsClose = document.getElementById('skills-close');
+  if(!skillsBtn || !skillsWin) return;
+  skillsBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    skillsWin.classList.toggle('show');
+  });
+  if(skillsClose) skillsClose.addEventListener('click', () => skillsWin.classList.remove('show'));
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') skillsWin.classList.remove('show');
+  });
+  document.addEventListener('click', (e) => {
+    if(!skillsWin.classList.contains('show')) return;
+    if(e.target.closest('#skills-win') || e.target.closest('#desk-skills')) return;
+    skillsWin.classList.remove('show');
+  });
+})();
 
 document.addEventListener('DOMContentLoaded', init);
 
