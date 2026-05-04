@@ -133,7 +133,7 @@ function init(){
     previewCap.textContent = '/ ' + f.name;
     preview.classList.add('show');
     previewBackdrop.classList.add('show');
-    render();
+    if(viewMode === 'list') render(); // refresh row selection highlight
   }
 
   function render(){
@@ -221,10 +221,12 @@ function init(){
             (isAdmin ? '<button class="del-btn" title="Delete" aria-label="Delete">×</button>' : '') +
           '</div>';
 
-        row.querySelector('.del-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteAt(idx);
-        });
+        if(isAdmin){
+          row.querySelector('.del-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteAt(idx);
+          });
+        }
         row.addEventListener('click', (e) => {
           if(e.target.closest('.name') || e.target.closest('.del-btn')) return;
           selectedIdx = idx;
