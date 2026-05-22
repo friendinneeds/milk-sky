@@ -1022,7 +1022,7 @@ function init(){
     previewCap.textContent = '/ ' + f.name;
     preview.classList.add('show');
     previewBackdrop.classList.add('show');
-    render();
+    if(viewMode === 'list') render();
   }
 
   function render(){
