@@ -823,8 +823,8 @@ body::after{
       <button class="btn" title="Up">▲</button>
     </div>
     <div class="nav" style="margin-left:6px">
-      <button class="btn" title="Icons">▦</button>
-      <button class="btn active" title="List">☰</button>
+      <button class="btn active" title="Icons">▦</button>
+      <button class="btn" title="List">☰</button>
       <button class="btn" title="Columns">|||</button>
     </div>
     <div class="crumb"><a>Desktop</a> &gt; <a>dear life</a> &gt; <span>milk sky</span></div>
@@ -1000,7 +1000,7 @@ function init(){
     return '';
   }
 
-  let viewMode = 'list'; // 'list' | 'grid'
+  let viewMode = 'grid'; // 'list' | 'grid'
   const colsEl = document.querySelector('.cols');
 
   function showPreview(f, idx){
