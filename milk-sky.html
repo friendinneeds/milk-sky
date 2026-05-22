@@ -1075,9 +1075,7 @@ function init(){
         item.appendChild(delBtn);
 
         item.addEventListener('click', (e) => {
-          if(e.target.closest('.grid-del')) return;
-          e.stopPropagation();
-          showPreview(f, idx);
+          if(e.target.closest('.grid-del')) e.stopPropagation();
         });
 
         list.appendChild(item);
@@ -1267,10 +1265,16 @@ function init(){
 
   // Hide preview when clicking outside the name link or preview itself
   document.addEventListener('click', (e) => {
+    const gItem = e.target.closest('.grid-item');
+    if(gItem && !e.target.closest('.grid-del')){
+      const i = parseInt(gItem.dataset.idx);
+      if(!isNaN(i) && FILES[i]) showPreview(FILES[i], i);
+      return;
+    }
     if(!preview.classList.contains('show')) return;
     if(e.target.closest('.name')) return;
     if(e.target.closest('.preview')) return;
-    if(e.target === previewBackdrop) return; // handled by backdrop listener
+    if(e.target === previewBackdrop) return;
     hidePreview();
   });
 
