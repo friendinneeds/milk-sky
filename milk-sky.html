@@ -233,6 +233,7 @@ body::after{
   border-color: var(--blue-4);
   box-shadow: 0 2px 8px rgba(20,55,100,.18);
 }
+img{-webkit-user-drag:none;user-drag:none}
 .grid-item img{
   width: 100%;
   height: 100%;
@@ -823,8 +824,8 @@ body::after{
       <button class="btn" title="Up">▲</button>
     </div>
     <div class="nav" style="margin-left:6px">
-      <button class="btn" title="Icons">▦</button>
-      <button class="btn active" title="List">☰</button>
+      <button class="btn active" title="Icons">▦</button>
+      <button class="btn" title="List">☰</button>
       <button class="btn" title="Columns">|||</button>
     </div>
     <div class="crumb"><a>Desktop</a> &gt; <a>dear life</a> &gt; <span>milk sky</span></div>
@@ -1000,7 +1001,7 @@ function init(){
     return '';
   }
 
-  let viewMode = 'list'; // 'list' | 'grid'
+  let viewMode = 'grid'; // 'list' | 'grid'
   const colsEl = document.querySelector('.cols');
 
   function showPreview(f, idx){
@@ -1010,6 +1011,7 @@ function init(){
     if(f.isImage){
       const im = document.createElement('img');
       im.src = f.url;
+      im.draggable = false;
       im.addEventListener('load', () => {
         if(im.naturalHeight > im.naturalWidth) im.classList.add('portrait');
       });
@@ -1022,7 +1024,7 @@ function init(){
     previewCap.textContent = '/ ' + f.name;
     preview.classList.add('show');
     previewBackdrop.classList.add('show');
-    render();
+    if(viewMode === 'list') render();
   }
 
   function render(){
@@ -1050,6 +1052,7 @@ function init(){
           img.src = f.url;
           img.alt = f.name;
           img.loading = 'lazy';
+          img.draggable = false;
           item.appendChild(img);
         } else {
           const iconWrap = document.createElement('div');
@@ -1074,8 +1077,7 @@ function init(){
         item.appendChild(delBtn);
 
         item.addEventListener('click', (e) => {
-          if(e.target.closest('.grid-del')) return;
-          showPreview(f, idx);
+          if(e.target.closest('.grid-del')) e.stopPropagation();
         });
 
         list.appendChild(item);
@@ -1265,10 +1267,16 @@ function init(){
 
   // Hide preview when clicking outside the name link or preview itself
   document.addEventListener('click', (e) => {
+    const gItem = e.target.closest('.grid-item');
+    if(gItem && !e.target.closest('.grid-del')){
+      const i = parseInt(gItem.dataset.idx);
+      if(!isNaN(i) && FILES[i]) showPreview(FILES[i], i);
+      return;
+    }
     if(!preview.classList.contains('show')) return;
     if(e.target.closest('.name')) return;
     if(e.target.closest('.preview')) return;
-    if(e.target === previewBackdrop) return; // handled by backdrop listener
+    if(e.target === previewBackdrop) return;
     hidePreview();
   });
 
