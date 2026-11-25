@@ -14,6 +14,12 @@ npm run preview  # serve the production build (needed to try offline mode)
 
 Hosting under a sub-path (for example GitHub Pages): `BASE_PATH=/repo-name/ npm run build`.
 
+## Put it online (GitHub Pages)
+
+`.github/workflows/deploy.yml` builds and publishes the app on every push to `main` (or `master`). One-time setup in the GitHub repo: Settings, Pages, Source: GitHub Actions. The site then lives at `https://<user>.github.io/<repo>/`. Open that address on your phone, then add it to the home screen. Pages on a private repository needs a paid GitHub plan.
+
+The workflow runs the tests first, so a broken change never goes live.
+
 ## How it fits together
 
 - `src/db/` Dexie (IndexedDB) schema, batch import, settings, backup. Schema changes must be additive: add a new `version(n)` block, never edit an old one.
