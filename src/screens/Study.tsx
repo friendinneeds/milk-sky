@@ -3,7 +3,16 @@ import { db } from '../db';
 import type { Rating, Word } from '../db/schema';
 import { recordReview } from '../db/review';
 import { getSettings } from '../db/settings';
-import { buildQueue, requeueAfter } from '../lib/queue';
+import {
+  buildPracticeQueue,
+  buildQueue,
+  practiceCounts,
+  requeueAfter,
+  type PracticeSize,
+  type PracticeSource,
+} from '../lib/queue';
+import { todayPlan } from '../lib/plan';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { dayKey } from '../lib/dates';
 import { streakInfo } from '../lib/streak';
 import { WordLabel } from '../components/WordLabel';
@@ -28,7 +37,42 @@ function speak(w: Word) {
   window.speechSynthesis.speak(u);
 }
 
-export function Study({ go }: { go: (r: Route) => void }) {
+interface Loaded {
+  ids: number[];
+  moreDue: boolean;
+}
+
+/** The daily session: due reviews, then today's new words. Opened from Home. */
+export function DailySession({ go }: { go: (r: Route) => void }) {
+  return (
+    <Session
+      go={go}
+      title="Today's session"
+      practice={false}
+      load={async () => {
+        const q = await buildQueue(db);
+        return { ids: q.ids, moreDue: q.dueTotal > q.reviewCount };
+      }}
+      onDone={() => go('home')}
+    />
+  );
+}
+
+function Session({
+  go,
+  title,
+  practice,
+  load: loadIds,
+  onDone,
+  learningNew = false,
+}: {
+  go: (r: Route) => void;
+  title: string;
+  practice: boolean;
+  load: () => Promise<Loaded>;
+  onDone: () => void;
+  learningNew?: boolean;
+}) {
   const wordsRef = useRef(new Map<number, Word>());
   const seenRef = useRef(new Set<number>());
   const busy = useRef(false);
@@ -42,7 +86,7 @@ export function Study({ go }: { go: (r: Route) => void }) {
   const [stats, setStats] = useState({ good: 0, again: 0 });
 
   const load = useCallback(async () => {
-    const q = await buildQueue(db);
+    const q = await loadIds();
     const rows = await db.words.bulkGet(q.ids);
     const map = new Map<number, Word>();
     for (const w of rows) if (w) map.set(w.id!, w);
@@ -51,10 +95,11 @@ export function Study({ go }: { go: (r: Route) => void }) {
     const ids = q.ids.filter((id) => map.has(id));
     setQueue(ids);
     setTotal(ids.length);
-    setMoreDue(q.dueTotal > q.reviewCount);
+    setMoreDue(q.moreDue);
     setStats({ good: 0, again: 0 });
     setFlipped(false);
     setLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -68,7 +113,7 @@ export function Study({ go }: { go: (r: Route) => void }) {
       try {
         const id = queue[0];
         const retry = seenRef.current.has(id);
-        const updated = await recordReview(db, id, rating, { retry });
+        const updated = await recordReview(db, id, rating, { retry, practice });
         if (!retry) {
           seenRef.current.add(id);
           setStats((s) => ({ good: s.good + (rating === 'good' ? 1 : 0), again: s.again + (rating === 'again' ? 1 : 0) }));
@@ -112,13 +157,13 @@ export function Study({ go }: { go: (r: Route) => void }) {
   if (total === 0) {
     return (
       <div className="screen sub">
-        <Header go={go} title="Study" count="" progress={0} />
+        <Header onClose={onDone} title={title} count="" progress={0} />
         <div className="card empty" style={{ marginTop: 24 }}>
-          <h2>Nothing to study right now</h2>
-          <p>Everything due is done. New words arrive tomorrow, or add more now.</p>
-          <button className="btn" onClick={() => go('add')}>Add words</button>
+          <h2>Nothing to study here</h2>
+          <p>{practice ? 'There are no words in this group yet.' : 'Everything due is done. Practise anytime from the Study tab.'}</p>
+          <button className="btn" onClick={() => go(practice ? 'add' : 'study')}>{practice ? 'Add words' : 'Practise'}</button>
         </div>
-        <button className="btn quiet" onClick={() => go('home')}>Back home</button>
+        <button className="btn quiet" onClick={onDone}>Back</button>
       </div>
     );
   }
@@ -130,7 +175,10 @@ export function Study({ go }: { go: (r: Route) => void }) {
       <Finished
         stats={stats}
         moreDue={moreDue}
+        practice={practice}
+        learningNew={learningNew}
         go={go}
+        onDone={onDone}
         onMore={() => {
           setLoaded(false);
           void load();
@@ -145,7 +193,7 @@ export function Study({ go }: { go: (r: Route) => void }) {
 
   return (
     <div className="screen sub study">
-      <Header go={go} title="Today's session" count={`${done} / ${total}`} progress={(done / total) * 100} />
+      <Header onClose={onDone} title={title} count={`${done} / ${total}`} progress={(done / total) * 100} />
 
       <div className="flash-wrap">
         <button className="flash" onClick={() => setFlipped((f) => !f)} aria-label={flipped ? 'Show the other side' : 'Flip card'}>
@@ -208,11 +256,11 @@ export function Study({ go }: { go: (r: Route) => void }) {
   );
 }
 
-function Header({ go, title, count, progress }: { go: (r: Route) => void; title: string; count: string; progress: number }) {
+function Header({ onClose, title, count, progress }: { onClose: () => void; title: string; count: string; progress: number }) {
   return (
     <>
       <header className="row-between">
-        <button className="back" aria-label="Close" onClick={() => go('home')}>
+        <button className="back" aria-label="Close" onClick={onClose}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
@@ -230,12 +278,18 @@ function Header({ go, title, count, progress }: { go: (r: Route) => void; title:
 function Finished({
   stats,
   moreDue,
+  practice,
+  learningNew,
   go,
+  onDone,
   onMore,
 }: {
   stats: { good: number; again: number };
   moreDue: boolean;
+  practice: boolean;
+  learningNew: boolean;
   go: (r: Route) => void;
+  onDone: () => void;
   onMore: () => void;
 }) {
   const [after, setAfter] = useState<{ streak: number; todayCards: number; minCards: number } | null>(null);
@@ -257,16 +311,22 @@ function Finished({
   return (
     <div className="screen sub">
       <header className="row-between" style={{ justifyContent: 'flex-end' }}>
-        <button className="back" style={{ marginRight: -10 }} aria-label="Close" onClick={() => go('home')}>
+        <button className="back" style={{ marginRight: -10 }} aria-label="Close" onClick={onDone}>
           <span aria-hidden="true" style={{ fontSize: 28, lineHeight: 1 }}>×</span>
         </button>
       </header>
 
       <div className="col" style={{ gap: 6 }}>
         <span className="ok-badge" aria-hidden="true">✓</span>
-        <h1 className="small" style={{ fontSize: 28, lineHeight: '34px' }}>Done for today</h1>
+        <h1 className="small" style={{ fontSize: 28, lineHeight: '34px' }}>{practice ? 'Round done' : 'Done for today'}</h1>
         <p className="sub-text" style={{ fontSize: 15, lineHeight: '22px' }}>
-          {moreDue ? 'More reviews are waiting. Start another session when you want them.' : 'Come back tomorrow. Extra study is optional.'}
+          {learningNew
+            ? 'These words are now part of your daily reviews.'
+            : practice
+              ? 'Practice never moves words you already started to a later date.'
+              : moreDue
+                ? 'More reviews are waiting. Start another session when you want them.'
+                : 'Come back tomorrow, or practise as much as you like from the Study tab.'}
         </p>
       </div>
 
@@ -285,9 +345,121 @@ function Finished({
       )}
 
       <div className="col" style={{ marginTop: 'auto' }}>
-        {moreDue && <button className="btn" onClick={onMore}>Start another session</button>}
-        <button className={`btn${moreDue ? ' quiet' : ''}`} onClick={() => go('home')}>Back home</button>
+        {practice ? (
+          <>
+            <button className="btn" onClick={onDone}>Practise more</button>
+            <button className="btn quiet" onClick={() => go('home')}>Back home</button>
+          </>
+        ) : (
+          <>
+            {moreDue && <button className="btn" onClick={onMore}>Start another session</button>}
+            <button className={`btn${moreDue ? ' quiet' : ''}`} onClick={() => go('study')}>Practise more</button>
+            <button className="btn quiet" onClick={() => go('home')}>Back home</button>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+type Choice = { kind: 'weak' } | { kind: 'all' } | { kind: 'batch'; batchId: number } | { kind: 'new' };
+const SIZES: { value: PracticeSize; label: string }[] = [
+  { value: 10, label: '10' },
+  { value: 20, label: '20' },
+  { value: 'all', label: 'All' },
+];
+
+/** The Study tab: today's session, and practice whenever you like. */
+export function Study({ go }: { go: (r: Route) => void }) {
+  const plan = useLiveQuery(() => todayPlan(db), []);
+  const counts = useLiveQuery(() => practiceCounts(db), []);
+  const [choice, setChoice] = useState<Choice>({ kind: 'all' });
+  const [size, setSize] = useState<PracticeSize>(20);
+  const [running, setRunning] = useState<{ source: PracticeSource; size: PracticeSize } | null>(null);
+
+  if (running) {
+    const learningNew = running.source.kind === 'new';
+    return (
+      <Session
+        go={go}
+        title={learningNew ? 'New words' : 'Practice'}
+        practice
+        learningNew={learningNew}
+        load={async () => ({ ids: await buildPracticeQueue(db, running.source, running.size), moreDue: false })}
+        onDone={() => setRunning(null)}
+      />
+    );
+  }
+  if (!plan || !counts) return <div className="screen" />;
+
+  const same = (a: Choice, b: Choice) =>
+    a.kind === b.kind && (a.kind !== 'batch' || (b.kind === 'batch' && a.batchId === b.batchId));
+  const options: { choice: Choice; title: string; count: number; hint: string }[] = [
+    { choice: { kind: 'weak' }, title: 'Words still learning', count: counts.weak, hint: 'The ones you got wrong or just started' },
+    { choice: { kind: 'all' }, title: 'All my words', count: counts.practisable, hint: 'Everything you have started, shuffled' },
+    ...counts.batches.map((b) => ({ choice: { kind: 'batch', batchId: b.id } as Choice, title: b.name, count: b.count, hint: 'One pack, shuffled' })),
+    { choice: { kind: 'new' }, title: 'Learn new words now', count: counts.notStarted, hint: 'Beyond today\'s ten. They join your reviews.' },
+  ];
+  const picked = options.find((o) => same(o.choice, choice)) ?? options[1];
+  const n = size === 'all' ? picked.count : Math.min(size, picked.count);
+
+  return (
+    <div className="screen">
+      <header>
+        <h1>Study</h1>
+      </header>
+
+      {plan.total > 0 ? (
+        <div className="card pad session">
+          <span className="muted" style={{ fontSize: 14 }}>Today's session</span>
+          <div className="num">
+            <span className="big">{plan.total}</span>
+            <span className="muted">cards, about {plan.minutes} min</span>
+          </div>
+          <button className="btn" onClick={() => go('session')}>Start session</button>
+        </div>
+      ) : (
+        <div className="notice ok" role="status">Today's session is done. Practise as much as you like below.</div>
+      )}
+
+      <div className="col">
+        <span className="label">Practice anytime</span>
+        <p className="sub-text" style={{ margin: '0 0 4px' }}>
+          As often as you want. It never pushes words you already started to a later date.
+        </p>
+        {options.map((o) => {
+          const on = same(o.choice, picked.choice);
+          return (
+            <button
+              key={o.choice.kind === 'batch' ? `b${o.choice.batchId}` : o.choice.kind}
+              className={`radio-row${on ? ' on' : ''}`}
+              aria-pressed={on}
+              disabled={o.count === 0}
+              style={o.count === 0 ? { opacity: 0.45 } : undefined}
+              onClick={() => setChoice(o.choice)}
+            >
+              <span>
+                <span className="t">{o.title}</span>
+                <span className="s">{o.count} {o.count === 1 ? 'word' : 'words'}. {o.hint}</span>
+              </span>
+              <span className="radio" />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="col">
+        <span className="label">How many</span>
+        <div className="seg" role="group" aria-label="Round size">
+          {SIZES.map((s) => (
+            <button key={String(s.value)} aria-pressed={size === s.value} onClick={() => setSize(s.value)}>{s.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <button className="btn" disabled={n === 0} onClick={() => setRunning({ source: picked.choice, size })}>
+        {n === 0 ? 'Nothing to practise yet' : picked.choice.kind === 'new' ? `Learn ${n} new words` : `Practise ${n} words`}
+      </button>
     </div>
   );
 }

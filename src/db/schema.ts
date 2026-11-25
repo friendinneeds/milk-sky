@@ -65,6 +65,8 @@ export interface Review {
   mode: 'study' | 'test';
   /** Extra practice after an "again" in the same session. Does not change the schedule. */
   retry?: boolean;
+  /** Extra practice outside the schedule. Does not change the schedule. */
+  practice?: boolean;
 }
 
 /** One row per local day with at least one finished review. */

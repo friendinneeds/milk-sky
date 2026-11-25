@@ -54,7 +54,7 @@ export function Home({ go }: { go: (r: Route) => void }) {
             Nothing is due.
             {plan.waiting > 0 && ` ${plan.waiting} words are waiting and start tomorrow.`}
           </p>
-          <button className="btn quiet" style={{ background: 'var(--s2)' }} onClick={() => go('add')}>Add words</button>
+          <button className="btn" onClick={() => go('study')}>Practise anyway</button>
         </div>
       ) : (
         <>
@@ -64,17 +64,17 @@ export function Home({ go }: { go: (r: Route) => void }) {
               <span className="big">{plan.total}</span>
               <span className="muted">cards, about {plan.minutes} min</span>
             </div>
-            <button className="btn" onClick={() => go('study')}>Start session</button>
+            <button className="btn" onClick={() => go('session')}>Start session</button>
           </div>
 
           <div className="card">
-            <button className="list-row" onClick={() => go('study')}>
+            <button className="list-row" onClick={() => go('session')}>
               <span className="t">Review</span>
               <span className="muted" style={{ fontSize: 14 }}>
                 {plan.dueTotal > plan.due ? `${plan.due} of ${plan.dueTotal} due` : `${plan.due} due`}
               </span>
             </button>
-            <button className="list-row" onClick={() => go('study')}>
+            <button className="list-row" onClick={() => go('session')}>
               <span className="t">New words</span>
               <span className="muted" style={{ fontSize: 14 }}>
                 {plan.newCount}

@@ -43,6 +43,7 @@ The workflow runs the tests first, so a broken change never goes live.
 - A session is today's due reviews (oldest first, at most `maxReviews`, default 50) followed by new words. Reviews over the cap wait for the next session.
 - New words are released about 10 a day (`dailyNew`), and never more than 10 wait unstudied, so skipping days builds no pile.
 - The streak counts a day once 5 cards are done (`streakMinCards`). One missed day between two studied days is covered by a freeze, at most one freeze per 7 days. Two missed days in a row break it.
+- Practice (Study tab) works any time, as often as you like: words still learning, all words, one pack, or new words beyond the daily ten. Practising a word you already started never changes its schedule. A word that is due anyway, or not started yet, is scheduled as usual. Practice counts toward the streak.
 - Desktop keys in a session: left arrow = still learning, right arrow = know it, up or down = flip.
 - The numbers above live in `Settings` (`src/db/schema.ts`). There is no settings screen yet.
 

@@ -5,7 +5,7 @@ import { addBatch, type NewWord } from '../db/words';
 import { recordReview } from '../db/review';
 import { updateSettings } from '../db/settings';
 import { KNOWN_STABILITY_DAYS, schedule } from './scheduler';
-import { buildQueue, requeueAfter } from './queue';
+import { buildPracticeQueue, buildQueue, practiceCounts, requeueAfter } from './queue';
 import { todayPlan } from './plan';
 import { streakInfo } from './streak';
 import { dayKey, daysBetween } from './dates';
@@ -178,5 +178,74 @@ describe('streak freezes', () => {
   it('measures days across month ends', () => {
     expect(daysBetween('2026-11-28', '2026-12-02')).toBe(4);
     expect(daysBetween('2026-12-02', '2026-11-28')).toBe(-4);
+  });
+});
+
+describe('practice', () => {
+  async function setup() {
+    await addBatch(db, { name: 'A', source: 'pack' }, many(30), NOON);
+    const ids = (await db.words.orderBy('id').primaryKeys()) as number[];
+    // ids[0] is started and not due for days
+    await recordReview(db, ids[0], 'good', { now: NOON, fuzz: false });
+    return ids;
+  }
+
+  it('leaves the schedule alone for a started word that is not due', async () => {
+    const ids = await setup();
+    const before = await db.words.get(ids[0]);
+    await recordReview(db, ids[0], 'again', { practice: true, now: NOON + 3600_000, fuzz: false });
+    const after = await db.words.get(ids[0]);
+    expect(after?.fsrs).toEqual(before?.fsrs);
+    expect(after?.status).toBe(before?.status);
+    const last = (await db.reviews.toArray()).pop()!;
+    expect(last.practice).toBe(true);
+    expect((await db.sessions.get(dayKey(NOON)))?.cards).toBe(2); // practice still counts for the streak
+  });
+
+  it('schedules a word that is due, even in practice', async () => {
+    const ids = await setup();
+    const w = await db.words.get(ids[0]);
+    await recordReview(db, ids[0], 'good', { practice: true, now: w!.due!, fuzz: false });
+    expect((await db.words.get(ids[0]))?.fsrs?.reps).toBe(2);
+  });
+
+  it('starts a queued word for real ("learn new words now")', async () => {
+    const ids = await setup();
+    const queued = ids[20];
+    expect((await db.words.get(queued))?.status).toBe('pool');
+    await recordReview(db, queued, 'good', { practice: true, now: NOON, fuzz: false });
+    const w = await db.words.get(queued);
+    expect(w?.status).toBe('learning');
+    expect(w?.introducedAt).toBe(NOON);
+    expect(w?.due).toBeGreaterThan(NOON);
+  });
+
+  it('builds rounds from the right words', async () => {
+    const ids = await setup();
+    await recordReview(db, ids[1], 'again', { now: NOON, fuzz: false });
+    const fixed = () => 0.5;
+
+    const weak = await buildPracticeQueue(db, { kind: 'weak' }, 'all', fixed);
+    expect(weak.sort()).toEqual([ids[0], ids[1]].sort());
+
+    const all = await buildPracticeQueue(db, { kind: 'all' }, 'all', fixed);
+    expect(all).toHaveLength(10); // 10 released today, queue excluded
+    expect(await buildPracticeQueue(db, { kind: 'all' }, 10, fixed)).toHaveLength(10);
+
+    const fresh = await buildPracticeQueue(db, { kind: 'new' }, 20, fixed);
+    // today's 8 unstarted new words first, then the queue in pack order
+    expect(fresh).toHaveLength(20);
+    expect(fresh.slice(0, 8)).toEqual(ids.slice(2, 10));
+    expect(fresh[8]).toBe(ids[10]);
+
+    const batch = await buildPracticeQueue(db, { kind: 'batch', batchId: 1 }, 'all', fixed);
+    expect(batch).toHaveLength(10);
+  });
+
+  it('counts what can be practised', async () => {
+    await setup();
+    const c = await practiceCounts(db);
+    expect(c).toMatchObject({ weak: 1, practisable: 10, notStarted: 29 });
+    expect(c.batches).toEqual([{ id: 1, name: 'A', count: 10 }]);
   });
 });

@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
-export const ROUTES = ['home', 'words', 'study', 'test', 'grammar', 'add'] as const;
+export const ROUTES = ['home', 'words', 'study', 'session', 'test', 'grammar', 'add'] as const;
 export type Route = (typeof ROUTES)[number];
 
 function read(): Route {
