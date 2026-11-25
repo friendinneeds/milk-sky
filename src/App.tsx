@@ -6,6 +6,7 @@ import { TabBar } from './components/TabBar';
 import { Home } from './screens/Home';
 import { Words } from './screens/Words';
 import { AddWords } from './screens/AddWords';
+import { Grammar } from './screens/Grammar';
 import { Coming } from './screens/Coming';
 
 export function App() {
@@ -30,7 +31,7 @@ export function App() {
       {route === 'add' && <AddWords go={go} />}
       {route === 'study' && <Coming title="Study" text="Flashcards and the daily session arrive in the next build step." />}
       {route === 'test' && <Coming title="Test" text="Tests arrive after the flashcards." />}
-      {route === 'grammar' && <Coming title="Grammar" text="Grammar lessons arrive in the last build step." />}
+      {route === 'grammar' && <Grammar />}
       {route !== 'add' && <TabBar route={route} go={go} />}
     </div>
   );

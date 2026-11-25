@@ -58,6 +58,12 @@ export interface Session {
   cards: number;
 }
 
+/** A grammar topic the user marked as understood. */
+export interface GrammarProgress {
+  id: string;
+  doneAt: number;
+}
+
 export interface Settings {
   /** How many pool words get introduced per day. */
   dailyNew: number;

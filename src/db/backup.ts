@@ -1,5 +1,5 @@
 import type { AppDB, SettingsRow } from './index';
-import type { Batch, Review, Session, Word } from './schema';
+import type { Batch, GrammarProgress, Review, Session, Word } from './schema';
 
 export interface Backup {
   app: 'deutsch';
@@ -10,17 +10,20 @@ export interface Backup {
   reviews: Review[];
   sessions: Session[];
   settings: SettingsRow[];
+  /** Added after the first release. Older backups don't have it. */
+  grammar?: GrammarProgress[];
 }
 
 export async function exportBackup(db: AppDB, now = Date.now()): Promise<Backup> {
-  const [words, batches, reviews, sessions, settings] = await Promise.all([
+  const [words, batches, reviews, sessions, settings, grammar] = await Promise.all([
     db.words.toArray(),
     db.batches.toArray(),
     db.reviews.toArray(),
     db.sessions.toArray(),
     db.settings.toArray(),
+    db.grammar.toArray(),
   ]);
-  return { app: 'deutsch', version: 1, exportedAt: now, words, batches, reviews, sessions, settings };
+  return { app: 'deutsch', version: 1, exportedAt: now, words, batches, reviews, sessions, settings, grammar };
 }
 
 /** Parses and checks a backup file. Throws an Error with a readable message. */
@@ -37,6 +40,7 @@ export function parseBackup(text: string): Backup {
   for (const key of ['words', 'batches', 'reviews', 'sessions', 'settings'] as const) {
     if (!Array.isArray(b[key])) throw new Error(`Backup is missing "${key}".`);
   }
+  if (b.grammar !== undefined && !Array.isArray(b.grammar)) throw new Error('Backup has a damaged "grammar" section.');
   for (const w of b.words as Word[]) {
     if (typeof w.de !== 'string' || typeof w.en !== 'string' || typeof w.dedupeKey !== 'string') {
       throw new Error('Backup contains a damaged word entry.');
@@ -49,7 +53,7 @@ export function parseBackup(text: string): Backup {
 export async function importBackup(db: AppDB, backup: Backup): Promise<void> {
   await db.transaction(
     'rw',
-    [db.words, db.batches, db.reviews, db.sessions, db.settings],
+    [db.words, db.batches, db.reviews, db.sessions, db.settings, db.grammar],
     async () => {
       await Promise.all([
         db.words.clear(),
@@ -57,7 +61,9 @@ export async function importBackup(db: AppDB, backup: Backup): Promise<void> {
         db.reviews.clear(),
         db.sessions.clear(),
         db.settings.clear(),
+        db.grammar.clear(),
       ]);
+      await db.grammar.bulkAdd(backup.grammar ?? []);
       await db.batches.bulkAdd(backup.batches);
       await db.words.bulkAdd(backup.words);
       await db.reviews.bulkAdd(backup.reviews);

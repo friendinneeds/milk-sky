@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Batch, Review, Session, Word } from './schema';
+import type { Batch, GrammarProgress, Review, Session, Word } from './schema';
 
 export interface SettingsRow {
   key: string;
@@ -12,6 +12,7 @@ export type AppDB = Dexie & {
   reviews: EntityTable<Review, 'id'>;
   sessions: EntityTable<Session, 'day'>;
   settings: EntityTable<SettingsRow, 'key'>;
+  grammar: EntityTable<GrammarProgress, 'id'>;
 };
 
 /**
@@ -26,6 +27,9 @@ export function createDb(name = 'deutsch'): AppDB {
     reviews: '++id, wordId, at',
     sessions: 'day',
     settings: 'key',
+  });
+  db.version(2).stores({
+    grammar: 'id',
   });
   return db;
 }

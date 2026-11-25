@@ -23,9 +23,15 @@ Hosting under a sub-path (for example GitHub Pages): `BASE_PATH=/repo-name/ npm 
 - Duplicates (same part of speech and spelling, ignoring case) are skipped on import.
 - Data lives in the browser only. Use Words, then Backup, to export a JSON copy.
 
+## Content
+
+- `src/data/myWords.ts` the 71 words from the user's PDF, `src/data/grammar.ts` the 14 grammar topics. Both list the corrections made to the PDF at the top of the file.
+- `src/data/sample.ts` a small starter pack (Food & drink). `src/data/packs.ts` lists the packs shown on the Add words screen.
+- A word already in the library (same part of speech and spelling) is never added twice, even from a different pack.
+
 ## Build plan
 
-1. App shell, data layer, backup, minimal add-words (done)
-2. Pack-building script, pack list, paste and CSV import, sorted summary screen
+1. App shell, data layer, backup (done)
+2. Packs, batch size, sorted summary, grammar lessons (done). Still to do: paste and CSV import
 3. Study cards with FSRS (ts-fsrs), daily session, streak with one weekly freeze
-4. Tests (multiple choice, type the word, pick the article) and grammar lessons
+4. Tests (multiple choice, type the word, pick the article) and grammar exercises

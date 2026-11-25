@@ -38,6 +38,25 @@ function clean(w: NewWord): NewWord {
 }
 
 /**
+ * The words of a list you don't have yet, in the list's order. Blank entries
+ * and repeats inside the list are dropped too.
+ */
+export async function unseen(db: AppDB, input: NewWord[]): Promise<NewWord[]> {
+  const seen = new Set<string>();
+  const unique: NewWord[] = [];
+  for (const raw of input) {
+    const w = clean(raw);
+    if (!w.de || !w.en) continue;
+    const key = dedupeKey(w);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(w);
+  }
+  const existing = new Set((await db.words.where('dedupeKey').anyOf([...seen]).keys()) as string[]);
+  return unique.filter((w) => !existing.has(dedupeKey(w)));
+}
+
+/**
  * Adds words to the pool. Words you already have (same part of speech and
  * spelling, ignoring case) are skipped, and so are repeats inside the input.
  * Input order is kept: it becomes the order words get introduced in.
