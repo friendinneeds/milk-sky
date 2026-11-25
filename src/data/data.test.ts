@@ -143,3 +143,34 @@ describe('grammar progress and backup', () => {
     expect(await upgraded.grammar.count()).toBe(0);
   });
 });
+
+describe('B1 verbs pack', () => {
+  it('has 68 verbs, no duplicates, each with forms and an example', async () => {
+    const { B1_VERBS } = await import('./b1Verbs');
+    expect(B1_VERBS).toHaveLength(68);
+    expect(new Set(B1_VERBS.map(dedupeKey)).size).toBe(68);
+    for (const v of B1_VERBS) {
+      expect(v.pos, v.de).toBe('verb');
+      expect(v.note, v.de).toMatch(/(hat|ist) /);
+      expect(v.example, v.de).toMatch(/[.!?]$/);
+      expect(v.exampleEn, v.de).toBeTruthy();
+      expect(v.topic, v.de).toBeTruthy();
+    }
+  });
+
+  it('sorts into the expected groups', async () => {
+    const { B1_VERBS } = await import('./b1Verbs');
+    const topic = (de: string) => B1_VERBS.find((v) => v.de === de)!.topic;
+    expect(topic('aufpassen auf')).toBe('With a preposition');
+    expect(topic('sich beeilen')).toBe('Reflexive');
+    expect(topic('ablehnen')).toBe('Separable');
+    expect(topic('empfehlen')).toBe('Other verbs');
+    expect(topic('vertrauen')).toBe('Other verbs');
+  });
+
+  it('adds alongside your own words without clashing', async () => {
+    const { B1_VERBS } = await import('./b1Verbs');
+    await addBatch(db, { name: 'My words', source: 'pack' }, MY_WORDS, NOON);
+    expect(await unseen(db, B1_VERBS)).toHaveLength(68);
+  });
+});
