@@ -107,12 +107,16 @@ export async function addBatch(
 /**
  * Moves words from the pool into today's queue, up to the daily limit.
  * Safe to call repeatedly: the day's counter lives in settings.
+ * Never leaves more than the daily limit of new words waiting at once.
  */
 export async function introduceUpToQuota(db: AppDB, now = Date.now()): Promise<number> {
   const settings = await getSettings(db);
   const day = dayKey(now);
   const introducedToday = settings.introDay === day ? settings.introducedToday : 0;
-  const room = Math.max(0, settings.dailyNew - introducedToday);
+  // Also hold back while new words from earlier days are still unstudied, so
+  // skipping a few days never builds a pile.
+  const waitingNew = await db.words.where('status').equals('new').count();
+  const room = Math.max(0, Math.min(settings.dailyNew - introducedToday, settings.dailyNew - waitingNew));
   if (room === 0) return 0;
 
   const ids = (await db.words.where('status').equals('pool').limit(room).primaryKeys()) as number[];

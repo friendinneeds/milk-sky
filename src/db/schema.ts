@@ -30,8 +30,22 @@ export interface Word {
   introducedAt?: number;
   /** Next review time in ms since epoch. */
   due?: number;
-  /** Scheduler state (ts-fsrs card), filled in once reviews exist. */
-  fsrs?: Record<string, unknown>;
+  /** Scheduler state, filled in after the first review. */
+  fsrs?: StoredCard;
+}
+
+/** A ts-fsrs card with dates stored as milliseconds, so it survives JSON. */
+export interface StoredCard {
+  due: number;
+  stability: number;
+  difficulty: number;
+  scheduledDays: number;
+  learningSteps: number;
+  reps: number;
+  lapses: number;
+  /** ts-fsrs State: 0 new, 1 learning, 2 review, 3 relearning. */
+  state: number;
+  lastReview?: number;
 }
 
 export interface Batch {
@@ -49,6 +63,8 @@ export interface Review {
   at: number;
   rating: Rating;
   mode: 'study' | 'test';
+  /** Extra practice after an "again" in the same session. Does not change the schedule. */
+  retry?: boolean;
 }
 
 /** One row per local day with at least one finished review. */
@@ -70,6 +86,8 @@ export interface Settings {
   desiredRetention: number;
   /** A session counts toward the streak from this many cards. */
   streakMinCards: number;
+  /** Most due reviews in one session. Anything beyond waits for the next session. */
+  maxReviews: number;
   introDay: string;
   introducedToday: number;
 }
@@ -78,6 +96,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyNew: 10,
   desiredRetention: 0.9,
   streakMinCards: 5,
+  maxReviews: 50,
   introDay: '',
   introducedToday: 0,
 };

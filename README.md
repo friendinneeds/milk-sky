@@ -29,9 +29,20 @@ Hosting under a sub-path (for example GitHub Pages): `BASE_PATH=/repo-name/ npm 
 - `src/data/sample.ts` a small starter pack (Food & drink). `src/data/packs.ts` lists the packs shown on the Add words screen.
 - A word already in the library (same part of speech and spelling) is never added twice, even from a different pack.
 
+## How studying works
+
+- Scheduling is FSRS through `ts-fsrs` (`src/lib/scheduler.ts`). "Know it" is a Good, "Still learning" is an Again. Short learning steps are off: this is a once-a-day app, so a miss comes back the next day.
+- A missed card also returns a few cards later in the same session for practice. That retry is logged but does not change the schedule.
+- A word counts as known once it is in review and its memory is predicted to last 21 days (`KNOWN_STABILITY_DAYS`). A miss sends it back to learning.
+- A session is today's due reviews (oldest first, at most `maxReviews`, default 50) followed by new words. Reviews over the cap wait for the next session.
+- New words are released about 10 a day (`dailyNew`), and never more than 10 wait unstudied, so skipping days builds no pile.
+- The streak counts a day once 5 cards are done (`streakMinCards`). One missed day between two studied days is covered by a freeze, at most one freeze per 7 days. Two missed days in a row break it.
+- Desktop keys in a session: left arrow = still learning, right arrow = know it, up or down = flip.
+- The numbers above live in `Settings` (`src/db/schema.ts`). There is no settings screen yet.
+
 ## Build plan
 
 1. App shell, data layer, backup (done)
 2. Packs, batch size, sorted summary, grammar lessons (done). Still to do: paste and CSV import
-3. Study cards with FSRS (ts-fsrs), daily session, streak with one weekly freeze
-4. Tests (multiple choice, type the word, pick the article) and grammar exercises
+3. Study cards with FSRS, daily session, streak with a weekly freeze (done)
+4. Tests (multiple choice, type the word, pick the article), grammar exercises, a settings screen

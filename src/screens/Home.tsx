@@ -70,7 +70,9 @@ export function Home({ go }: { go: (r: Route) => void }) {
           <div className="card">
             <button className="list-row" onClick={() => go('study')}>
               <span className="t">Review</span>
-              <span className="muted" style={{ fontSize: 14 }}>{plan.due} due</span>
+              <span className="muted" style={{ fontSize: 14 }}>
+                {plan.dueTotal > plan.due ? `${plan.due} of ${plan.dueTotal} due` : `${plan.due} due`}
+              </span>
             </button>
             <button className="list-row" onClick={() => go('study')}>
               <span className="t">New words</span>

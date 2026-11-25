@@ -7,6 +7,7 @@ import { Home } from './screens/Home';
 import { Words } from './screens/Words';
 import { AddWords } from './screens/AddWords';
 import { Grammar } from './screens/Grammar';
+import { Study } from './screens/Study';
 import { Coming } from './screens/Coming';
 
 export function App() {
@@ -29,10 +30,10 @@ export function App() {
       {route === 'home' && <Home go={go} />}
       {route === 'words' && <Words go={go} />}
       {route === 'add' && <AddWords go={go} />}
-      {route === 'study' && <Coming title="Study" text="Flashcards and the daily session arrive in the next build step." />}
+      {route === 'study' && <Study go={go} />}
       {route === 'test' && <Coming title="Test" text="Tests arrive after the flashcards." />}
       {route === 'grammar' && <Grammar />}
-      {route !== 'add' && <TabBar route={route} go={go} />}
+      {route !== 'add' && route !== 'study' && <TabBar route={route} go={go} />}
     </div>
   );
 }

@@ -177,3 +177,30 @@ h1.small { font-size: 24px; line-height: 30px; }
 .gtable .rowhead { text-align: left; padding-left: 10px; font-size: 13px; color: var(--muted); }
 .tip { padding: 16px 20px; border-radius: 20px; background: #2a2315; color: #e8d9b0; font-size: 15px; line-height: 22px; }
 .tip .th { font-size: 13px; font-weight: 600; color: var(--warn); margin-bottom: 4px; }
+
+/* study */
+.screen.study { gap: 16px; }
+.progress { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.progress span { display: block; height: 4px; border-radius: 2px; background: var(--acc); transition: width 0.2s; }
+.flash-wrap { position: relative; margin-top: 8px; flex: 1; min-height: 360px; max-height: 520px; display: flex; }
+.flash {
+  flex: 1; display: flex; flex-direction: column; width: 100%; padding: 20px; border: 0; border-radius: 28px;
+  background: var(--s1); color: var(--text); text-align: center;
+}
+.flash-top { display: flex; align-items: center; justify-content: flex-start; min-height: 44px; }
+.tag { padding: 6px 12px; border-radius: 12px; background: var(--line); font-size: 13px; font-weight: 500; color: #b4b4be; }
+.flash-main {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  font: 700 40px/48px 'Space Grotesk', sans-serif; overflow-wrap: anywhere; padding: 0 4px;
+}
+.flash-main.answer { font-size: 36px; line-height: 44px; }
+.flash-sub { font: 400 15px/22px 'Inter Variable', system-ui, sans-serif; color: var(--muted); }
+.flash-hint { font-size: 14px; color: var(--muted); }
+.flash-extra { display: flex; flex-direction: column; gap: 4px; padding: 14px 18px; border-radius: 16px; background: var(--bg); text-align: left; }
+.flash-extra .ex { font-size: 16px; font-weight: 500; }
+.flash-extra .muted { font-size: 14px; }
+.flash-extra .note { font-size: 13px; }
+.speak { position: absolute; top: 20px; right: 20px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 22px; background: none; color: var(--acc); }
+.btn.again { color: var(--warn); }
+.text-btn { align-self: center; height: 44px; padding: 0 12px; border: 0; background: none; color: #b4b4be; font-size: 14px; font-weight: 500; }
+.footer-actions .btn { flex: 1; }

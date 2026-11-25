@@ -84,10 +84,26 @@ describe('introduceUpToQuota', () => {
     await addBatch(db, { name: 'A', source: 'pack' }, Array.from({ length: 30 }, (_, i) => mk(`W${i}`)), NOON);
     expect(await introduceUpToQuota(db, NOON)).toBe(0); // quota already used by addBatch
 
+    // Study today's ten, then tomorrow brings ten more.
+    const ids = await db.words.where('status').equals('new').primaryKeys();
+    for (const id of ids) await db.words.update(id, { status: 'learning', due: NOON + 86_400_000 });
+
     const tomorrow = NOON + 24 * 3600 * 1000;
     expect(await introduceUpToQuota(db, tomorrow)).toBe(10);
     expect(await introduceUpToQuota(db, tomorrow)).toBe(0);
     expect(await db.words.where('status').equals('pool').count()).toBe(10);
+  });
+
+  it('holds back while earlier new words are still unstudied', async () => {
+    await addBatch(db, { name: 'A', source: 'pack' }, Array.from({ length: 30 }, (_, i) => mk(`W${i}`)), NOON);
+    const threeDaysLater = NOON + 3 * 24 * 3600 * 1000;
+    expect(await introduceUpToQuota(db, threeDaysLater)).toBe(0);
+
+    // Study 4 of the 10, so 6 are still waiting: only 4 more are released.
+    const ids = (await db.words.where('status').equals('new').limit(4).primaryKeys()) as number[];
+    for (const id of ids) await db.words.update(id, { status: 'learning', due: threeDaysLater });
+    expect(await introduceUpToQuota(db, threeDaysLater)).toBe(4);
+    expect(await db.words.where('status').equals('new').count()).toBe(10);
   });
 
   it('respects a changed daily limit', async () => {
@@ -124,9 +140,9 @@ describe('streak', () => {
   it('stays alive when today is not done yet', () => {
     expect(computeStreak(['2026-11-23', '2026-11-22'], today)).toBe(2);
   });
-  it('breaks after a missed day', () => {
-    expect(computeStreak(['2026-11-22', '2026-11-21'], today)).toBe(0);
-    expect(computeStreak(['2026-11-24', '2026-11-22'], today)).toBe(1);
+  it('breaks after two missed days in a row', () => {
+    expect(computeStreak(['2026-11-21', '2026-11-20'], today)).toBe(0);
+    expect(computeStreak(['2026-11-24', '2026-11-21'], today)).toBe(1);
   });
   it('handles month and year boundaries', () => {
     expect(prevDay('2026-03-01')).toBe('2026-02-28');
